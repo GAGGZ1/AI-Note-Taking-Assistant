@@ -43,3 +43,39 @@ export async function generateImagePrompt(name: string) {
     return `Flat illustration of a notebook titled "${name}" on a pastel background.`;
   }
 }
+
+
+export async function generateImage(image_description: string) {
+  try {
+    const CLIPDROP_API_KEY = process.env.CLIPDROP_API_KEY;
+    if (!CLIPDROP_API_KEY) {
+      throw new Error("Clipdrop API key is not set.");
+    }
+
+    const formData = new FormData();
+    formData.append('prompt', image_description);
+
+    const response = await fetch("https://clipdrop-api.co/text-to-image/v1", {
+      method: "POST",
+      headers: {
+        'x-api-key': CLIPDROP_API_KEY,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(`Failed to generate image: ${err.error}`);
+    }
+
+    // The response body is an image (PNG)
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    const image_url = `data:image/png;base64,${base64}`;
+    
+    return image_url;
+  } catch (error) {
+    console.error("❌ Error generating image:", error);
+    return null;
+  }
+}

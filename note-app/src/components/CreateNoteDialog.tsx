@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -18,18 +17,22 @@ import { useRouter } from "next/navigation";
 
 type Props = {};
 
+type CreateNotebookResponse = {
+  note_id: string;
+};
+
 const CreateNoteDialog = (props: Props) => {
   const router = useRouter();
   const [input, setInput] = React.useState("");
+
   const uploadToFirebase = useMutation({
     mutationFn: async (noteId: string) => {
-      const response = await axios.post("/api/uploadToFirebase", {
-        noteId,
-      });
+      const response = await axios.post("/api/uploadToFirebase", { noteId });
       return response.data;
     },
   });
-  const createNotebook = useMutation({
+
+  const createNotebook = useMutation<CreateNotebookResponse, Error, void>({
     mutationFn: async () => {
       const response = await axios.post("/api/createNoteBook", {
         name: input,
@@ -40,19 +43,19 @@ const CreateNoteDialog = (props: Props) => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (input === "") {
+    if (input.trim() === "") {
       window.alert("Please enter a name for your notebook");
       return;
     }
+
     createNotebook.mutate(undefined, {
       onSuccess: ({ note_id }) => {
-        console.log("created new note:", { note_id });
-        // hit another endpoint to uplod the temp dalle url to permanent firebase url
-        uploadToFirebase.mutate(note_id);
+        console.log("Created new notebook:", note_id);
+        // Optional: uploadToFirebase.mutate(note_id);
         router.push(`/notebook/${note_id}`);
       },
       onError: (error) => {
-        console.error(error);
+        console.error("Error creating notebook:", error);
         window.alert("Failed to create new notebook");
       },
     });
@@ -81,19 +84,19 @@ const CreateNoteDialog = (props: Props) => {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Name..."
           />
-          <div className="h-4"></div>
+          <div className="h-4" />
           <div className="flex items-center gap-2">
-            <Button type="reset" variant={"secondary"}>
+            <Button type="reset" variant="secondary">
               Cancel
             </Button>
             <Button
               type="submit"
               className="bg-green-600"
-              // disabled={createNotebook.isLoading}
+              disabled={createNotebook.isPending}
             >
-              {/* {createNotebook.isLoading && (
+              {createNotebook.isPending && (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              )} */}
+              )}
               Create
             </Button>
           </div>
