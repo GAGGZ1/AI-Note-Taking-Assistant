@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from "next/server";
 import { $notes } from '@/lib/db/schema'; // ✅ Corrected import
 
-export const runtime = "edge";
+export const runtime = "node";
 
 export async function POST(req: Request) {
   const { userId } = await auth();
